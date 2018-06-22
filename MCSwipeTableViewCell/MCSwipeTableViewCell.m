@@ -267,22 +267,32 @@ typedef NS_ENUM(NSUInteger, MCSwipeTableViewCellDirection) {
     _direction                          = [self directionWithPercentage:percentage];
     
     if (state == UIGestureRecognizerStateBegan || state == UIGestureRecognizerStateChanged) {
+        [self animateSliderWithXTranslation:translation.x animationDuration:animationDuration hasEnded:NO];
+        [gesture setTranslation:CGPointZero inView:self];
+    } else if (state == UIGestureRecognizerStateEnded || state == UIGestureRecognizerStateCancelled) {
+        [self animateSliderWithXTranslation:translation.x animationDuration:animationDuration hasEnded:YES];
+    }
+}
+
+- (void)animateSliderWithXTranslation:(CGFloat)xTranslation animationDuration:(CGFloat)animationDuration hasEnded:(BOOL)hasEnded {
+    CGFloat percentage = [self percentageWithOffset:CGRectGetMinX(_contentScreenshotView.frame) relativeToWidth:CGRectGetWidth(self.bounds)];
+
+    if (!hasEnded) {
         _dragging = YES;
         
         [self setupSwipingView];
         
-        CGPoint center = {_contentScreenshotView.center.x + translation.x, _contentScreenshotView.center.y};
+        CGPoint center = {_contentScreenshotView.center.x + xTranslation, _contentScreenshotView.center.y};
         _contentScreenshotView.center = center;
         [self animateWithOffset:CGRectGetMinX(_contentScreenshotView.frame)];
-        [gesture setTranslation:CGPointZero inView:self];
-        
+
         // Notifying the delegate that we are dragging with an offset percentage.
         if ([_delegate respondsToSelector:@selector(swipeTableViewCell:didSwipeWithPercentage:)]) {
             [_delegate swipeTableViewCell:self didSwipeWithPercentage:percentage];
         }
     }
     
-    else if (state == UIGestureRecognizerStateEnded || state == UIGestureRecognizerStateCancelled) {
+    else {
         
         _dragging = NO;
         _activeView = [self viewWithPercentage:percentage];
@@ -660,6 +670,14 @@ typedef NS_ENUM(NSUInteger, MCSwipeTableViewCellDirection) {
             }];
         }];
     }
+}
+
+#pragma mark - Trigger manually
+
+- (void)triggerState1 {
+    [UIView animateWithDuration:0.4f animations:^{
+        [self animateSliderWithXTranslation:self.bounds.size.width animationDuration:0 hasEnded:NO];
+    } completion:nil];
 }
 
 #pragma mark - Utilities
